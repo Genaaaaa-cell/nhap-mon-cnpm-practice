@@ -1,7 +1,1028 @@
 <!DOCTYPE html>
-<h1>ÁNDVNDSKfsaffadlkfmaslkJVND</h1>
-<h1> EM yêu hóa học vs Tin Học vs Lịch Sử year</h1>
-<h1>
-    shfsakjfhsal
-</h1>
-<h1>sjdsasaldjail</h1>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER SURVIVOR - Offline Top-Down Shooter</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #08090e;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+    /* HUD Overlay */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .stats-card {
+      background: rgba(12, 16, 26, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 8px;
+      padding: 12px 18px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+    }
+    .score-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #00f0ff;
+      margin-bottom: 4px;
+    }
+    .score-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+    .wave-badge {
+      font-size: 14px;
+      color: #ff0055;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
+    }
+
+    /* Health & Status Bars */
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .player-bars {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bar-container {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid #222c3d;
+      border-radius: 4px;
+      height: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      transition: width 0.15s ease-out;
+    }
+    #hp-bar {
+      background: linear-gradient(90deg, #ff0055, #ff5577);
+      box-shadow: 0 0 10px #ff0055;
+      width: 100%;
+    }
+    #shield-bar {
+      background: linear-gradient(90deg, #00f0ff, #70f7ff);
+      box-shadow: 0 0 10px #00f0ff;
+      width: 0%;
+    }
+    .bar-label {
+      position: absolute;
+      top: 0;
+      left: 6px;
+      font-size: 10px;
+      line-height: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    /* Weapon Rack */
+    .weapon-hud {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .weapon-slot {
+      background: rgba(12, 16, 26, 0.75);
+      border: 1px solid #222c3d;
+      border-radius: 8px;
+      padding: 10px 16px;
+      min-width: 110px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .weapon-slot.active {
+      border-color: #00f0ff;
+      background: rgba(0, 240, 255, 0.15);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+      transform: translateY(-4px);
+    }
+    .w-key {
+      font-size: 10px;
+      color: #8899aa;
+    }
+    .w-name {
+      font-size: 13px;
+      font-weight: bold;
+      margin: 2px 0;
+      color: #fff;
+    }
+    .w-ammo {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffe600;
+    }
+
+    /* Overlays (Start / Game Over) */
+    .modal-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 8, 14, 0.88);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    .modal-box {
+      text-align: center;
+      max-width: 480px;
+      padding: 36px;
+      background: #0d121d;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+    }
+    .modal-box h1 {
+      font-size: 38px;
+      font-weight: 900;
+      color: #00f0ff;
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+      text-shadow: 0 0 15px #00f0ff;
+    }
+    .modal-box h2 {
+      font-size: 32px;
+      color: #ff0055;
+      margin-bottom: 12px;
+    }
+    .modal-box p {
+      font-size: 14px;
+      color: #a0aec0;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .btn {
+      background: linear-gradient(135deg, #00f0ff, #0088cc);
+      color: #050a12;
+      border: none;
+      padding: 14px 34px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.7);
+    }
+    .instructions {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #718096;
+      line-height: 1.6;
+      border-top: 1px dashed #243147;
+      padding-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- In-Game HUD -->
+    <div id="hud">
+      <div class="hud-top">
+        <div class="stats-card">
+          <div class="score-title">Điểm số</div>
+          <div id="score-display" class="score-val">0</div>
+          <div id="wave-display" class="wave-badge">ĐỢT 1</div>
+        </div>
+        <div class="stats-card" style="text-align: right;">
+          <div class="score-title">Kỷ lục</div>
+          <div id="high-score" class="score-val" style="color: #ffe600;">0</div>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="player-bars">
+          <div class="bar-container">
+            <div id="hp-bar" class="bar-fill"></div>
+            <div class="bar-label">Máu: <span id="hp-text">100</span>%</div>
+          </div>
+          <div class="bar-container">
+            <div id="shield-bar" class="bar-fill"></div>
+            <div class="bar-label">Giáp: <span id="shield-text">0</span>%</div>
+          </div>
+        </div>
+
+        <div class="weapon-hud">
+          <div class="weapon-slot active" id="slot-0">
+            <div class="w-key">[1] Súng lục</div>
+            <div class="w-name">PISTOL</div>
+            <div class="w-ammo" id="ammo-0">∞</div>
+          </div>
+          <div class="weapon-slot" id="slot-1">
+            <div class="w-key">[2] Shotgun</div>
+            <div class="w-name">SHOTGUN</div>
+            <div class="w-ammo" id="ammo-1">8/8</div>
+          </div>
+          <div class="weapon-slot" id="slot-2">
+            <div class="w-key">[3] Súng trường</div>
+            <div class="w-name">RIFLE</div>
+            <div class="w-ammo" id="ammo-2">30/30</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="modal-screen">
+      <div class="modal-box">
+        <h1>CYBER SHOOTER</h1>
+        <p>Chiến đấu sinh tồn chống lại các đợt quái vật biến đổi gen trong thành phố ngầm. Hoàn toàn Offline!</p>
+        <button class="btn" id="start-btn">BẮT ĐẦU CHIẾN ĐẤU</button>
+        <div class="instructions">
+          🎮 <b>Di chuyển:</b> Phím W, A, S, D<br>
+          🎯 <b>Bắn:</b> Giữ Chuột Trái &nbsp;|&nbsp; 🔄 <b>Nạp đạn:</b> Phím R<br>
+          🔫 <b>Đổi súng:</b> Phím 1, 2, 3 hoặc Cuộn chuột
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="modal-screen" style="display: none;">
+      <div class="modal-box">
+        <h2>CHIẾN BINH TỬ TRẬN</h2>
+        <p>Điểm số đạt được: <b id="final-score" style="color: #00f0ff; font-size: 20px;">0</b><br>
+        Sống sót qua: <span id="final-wave" style="color:#ff0055;">Đợt 1</span></p>
+        <button class="btn" id="restart-btn">TÁI XUẤT TRẬN</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. SYNTH AUDIO ENGINE (Web Audio API - Không cần file âm thanh tải ngoài)
+       ========================================================================= */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playPistol() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.12);
+      }
+      playShotgun() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(now + 0.25);
+      }
+      playRifle() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+      playHit() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+      playPickup() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(780, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      }
+      playReload() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(440, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.25);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* =========================================================================
+       2. CANVAS VÀ THIẾT LẬP TOÀN CỤC
+       ========================================================================= */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const keys = {};
+    const mouse = { x: width / 2, y: height / 2, isDown: false };
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key === '1') switchWeapon(0);
+      if (e.key === '2') switchWeapon(1);
+      if (e.key === '3') switchWeapon(2);
+      if (e.key.toLowerCase() === 'r') reloadCurrentWeapon();
+    });
+    window.addEventListener('keyup', (e) => (keys[e.key.toLowerCase()] = false));
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+    window.addEventListener('mousedown', (e) => {
+      if (e.button === 0) mouse.isDown = true;
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 0) mouse.isDown = false;
+    });
+    window.addEventListener('wheel', (e) => {
+      if (e.deltaY > 0) switchWeapon((currentWeaponIndex + 1) % weapons.length);
+      else switchWeapon((currentWeaponIndex - 1 + weapons.length) % weapons.length);
+    });
+
+    /* =========================================================================
+       3. TRẠNG THÁI GAME, VŨ KHÍ & ĐỐI TƯỢNG
+       ========================================================================= */
+    let gameState = 'START'; // START, PLAYING, GAMEOVER
+    let score = 0;
+    let wave = 1;
+    let enemiesRemainingToSpawn = 10;
+    let waveTimer = 0;
+    let screenShake = 0;
+    let highScore = parseInt(localStorage.getItem('cyber_shooter_hi') || '0', 10);
+    document.getElementById('high-score').innerText = highScore;
+
+    const weapons = [
+      {
+        name: 'PISTOL',
+        magSize: Infinity,
+        ammo: Infinity,
+        reserve: Infinity,
+        fireRate: 220,
+        lastShot: 0,
+        damage: 28,
+        speed: 16,
+        spread: 0.05,
+        bulletsPerShot: 1,
+        color: '#00f0ff',
+        reloadTime: 0,
+        isReloading: false
+      },
+      {
+        name: 'SHOTGUN',
+        magSize: 8,
+        ammo: 8,
+        reserve: 48,
+        fireRate: 650,
+        lastShot: 0,
+        damage: 18,
+        speed: 14,
+        spread: 0.28,
+        bulletsPerShot: 6,
+        color: '#ff9900',
+        reloadTime: 1200,
+        isReloading: false
+      },
+      {
+        name: 'RIFLE',
+        magSize: 30,
+        ammo: 30,
+        reserve: 180,
+        fireRate: 110,
+        lastShot: 0,
+        damage: 22,
+        speed: 20,
+        spread: 0.08,
+        bulletsPerShot: 1,
+        color: '#ffe600',
+        reloadTime: 1400,
+        isReloading: false
+      }
+    ];
+
+    let currentWeaponIndex = 0;
+
+    const player = {
+      x: width / 2,
+      y: height / 2,
+      radius: 18,
+      speed: 4.2,
+      hp: 100,
+      maxHp: 100,
+      shield: 50,
+      maxShield: 100,
+      angle: 0
+    };
+
+    let bullets = [];
+    let enemies = [];
+    let particles = [];
+    let pickups = [];
+
+    /* =========================================================================
+       4. LOGIC VŨ KHÍ & ĐIỀU KHIỂN
+       ========================================================================= */
+    function switchWeapon(index) {
+      if (index === currentWeaponIndex) return;
+      currentWeaponIndex = index;
+      document.querySelectorAll('.weapon-slot').forEach((slot, i) => {
+        slot.classList.toggle('active', i === currentWeaponIndex);
+      });
+      updateHUD();
+    }
+
+    function reloadCurrentWeapon() {
+      const w = weapons[currentWeaponIndex];
+      if (w.magSize === Infinity || w.isReloading || w.ammo === w.magSize || w.reserve <= 0) return;
+      w.isReloading = true;
+      sound.playReload();
+      setTimeout(() => {
+        const needed = w.magSize - w.ammo;
+        const take = Math.min(needed, w.reserve);
+        w.ammo += take;
+        w.reserve -= take;
+        w.isReloading = false;
+        updateHUD();
+      }, w.reloadTime);
+    }
+
+    function fireWeapon() {
+      const now = performance.now();
+      const w = weapons[currentWeaponIndex];
+      if (w.isReloading) return;
+      if (now - w.lastShot < w.fireRate) return;
+      if (w.magSize !== Infinity && w.ammo <= 0) {
+        reloadCurrentWeapon();
+        return;
+      }
+
+      w.lastShot = now;
+      if (w.magSize !== Infinity) w.ammo--;
+
+      // Âm thanh tương ứng
+      if (currentWeaponIndex === 0) sound.playPistol();
+      else if (currentWeaponIndex === 1) sound.playShotgun();
+      else if (currentWeaponIndex === 2) sound.playRifle();
+
+      screenShake = Math.max(screenShake, currentWeaponIndex === 1 ? 8 : 3);
+
+      for (let i = 0; i < w.bulletsPerShot; i++) {
+        const spreadOffset = (Math.random() - 0.5) * w.spread;
+        const finalAngle = player.angle + spreadOffset;
+        bullets.push({
+          x: player.x + Math.cos(player.angle) * player.radius,
+          y: player.y + Math.sin(player.angle) * player.radius,
+          vx: Math.cos(finalAngle) * w.speed,
+          vy: Math.sin(finalAngle) * w.speed,
+          damage: w.damage,
+          color: w.color,
+          life: 70
+        });
+      }
+      updateHUD();
+    }
+
+    /* =========================================================================
+       5. QUÁI VẬT & SPAWN THEO WAVE
+       ========================================================================= */
+    function spawnEnemy() {
+      // Spawn quái ngoài viền màn hình
+      let ex, ey;
+      const pad = 50;
+      if (Math.random() < 0.5) {
+        ex = Math.random() < 0.5 ? -pad : width + pad;
+        ey = Math.random() * height;
+      } else {
+        ex = Math.random() * width;
+        ey = Math.random() < 0.5 ? -pad : height + pad;
+      }
+
+      const roll = Math.random();
+      let type = 'WALKER';
+      let hp = 45 + wave * 10;
+      let spd = 2.2 + Math.min(wave * 0.15, 2.0);
+      let rad = 16;
+      let col = '#ff0055';
+
+      if (roll > 0.75 && wave >= 2) {
+        // Fast Runner
+        type = 'RUNNER';
+        hp = 25 + wave * 6;
+        spd = 4.3;
+        rad = 12;
+        col = '#ff5500';
+      } else if (roll < 0.2 && wave >= 3) {
+        // Tank / Mutant Juggernaut
+        type = 'TANK';
+        hp = 180 + wave * 40;
+        spd = 1.3;
+        rad = 28;
+        col = '#aa00ff';
+      }
+
+      enemies.push({
+        x: ex,
+        y: ey,
+        radius: rad,
+        hp: hp,
+        maxHp: hp,
+        speed: spd,
+        color: col,
+        type: type
+      });
+    }
+
+    /* =========================================================================
+       6. HIỆU ỨNG HẠT & VẬT PHẨM (PICKUPS)
+       ========================================================================= */
+    function createExplosion(x, y, color, count = 12) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 4 + 1;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          radius: Math.random() * 3 + 1,
+          color: color,
+          alpha: 1,
+          decay: Math.random() * 0.025 + 0.02
+        });
+      }
+    }
+
+    function spawnPickup(x, y) {
+      if (Math.random() > 0.35) return; // 35% tỷ lệ rơi đồ
+      const types = ['HP', 'SHIELD', 'AMMO'];
+      const chosen = types[Math.floor(Math.random() * types.length)];
+      pickups.push({
+        x: x,
+        y: y,
+        radius: 12,
+        type: chosen,
+        pulse: 0
+      });
+    }
+
+    /* =========================================================================
+       7. CẬP NHẬT HUD
+       ========================================================================= */
+    function updateHUD() {
+      document.getElementById('score-display').innerText = score;
+      document.getElementById('wave-display').innerText = `ĐỢT ${wave}`;
+      document.getElementById('hp-bar').style.width = `${Math.max(0, player.hp)}%`;
+      document.getElementById('hp-text').innerText = Math.max(0, Math.round(player.hp));
+      document.getElementById('shield-bar').style.width = `${player.shield}%`;
+      document.getElementById('shield-text').innerText = Math.round(player.shield);
+
+      weapons.forEach((w, i) => {
+        const ammoEl = document.getElementById(`ammo-${i}`);
+        if (ammoEl) {
+          if (w.magSize === Infinity) ammoEl.innerText = '∞';
+          else if (w.isReloading) ammoEl.innerText = 'NẠP...';
+          else ammoEl.innerText = `${w.ammo}/${w.reserve}`;
+        }
+      });
+    }
+
+    /* =========================================================================
+       8. VÒNG LẶP CHÍNH CỦA GAME (GAME LOOP)
+       ========================================================================= */
+    let lastTime = performance.now();
+
+    function gameLoop(time) {
+      requestAnimationFrame(gameLoop);
+      const dt = (time - lastTime) / 1000;
+      lastTime = time;
+
+      if (gameState !== 'PLAYING') return;
+
+      update(dt);
+      render();
+    }
+
+    function update(dt) {
+      // 1. Góc nhìn người chơi theo chuột
+      player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+
+      // 2. Di chuyển người chơi (WASD)
+      let dx = 0;
+      let dy = 0;
+      if (keys['w'] || keys['arrowup']) dy -= 1;
+      if (keys['s'] || keys['arrowdown']) dy += 1;
+      if (keys['a'] || keys['arrowleft']) dx -= 1;
+      if (keys['d'] || keys['arrowright']) dx += 1;
+
+      if (dx !== 0 && dy !== 0) {
+        dx *= 0.7071;
+        dy *= 0.7071;
+      }
+      player.x += dx * player.speed;
+      player.y += dy * player.speed;
+
+      // Giữ người chơi trong giới hạn màn hình
+      player.x = Math.max(player.radius, Math.min(width - player.radius, player.x));
+      player.y = Math.max(player.radius, Math.min(height - player.radius, player.y));
+
+      // 3. Tự động bắn nếu đang nhấn chuột
+      if (mouse.isDown) fireWeapon();
+
+      // 4. Quản lý Đợt Quái (Wave)
+      waveTimer += dt;
+      if (enemiesRemainingToSpawn > 0 && waveTimer > 0.6) {
+        spawnEnemy();
+        enemiesRemainingToSpawn--;
+        waveTimer = 0;
+      } else if (enemiesRemainingToSpawn <= 0 && enemies.length === 0) {
+        wave++;
+        enemiesRemainingToSpawn = 8 + wave * 4;
+        player.shield = Math.min(player.maxShield, player.shield + 20); // Tặng thêm giáp qua wave
+        updateHUD();
+      }
+
+      // 5. Cập nhật Đạn
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.life--;
+        if (b.life <= 0 || b.x < 0 || b.x > width || b.y < 0 || b.y > height) {
+          bullets.splice(i, 1);
+        }
+      }
+
+      // 6. Cập nhật Quái vật & Va chạm
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        const angleToPlayer = Math.atan2(player.y - e.y, player.x - e.x);
+        e.x += Math.cos(angleToPlayer) * e.speed;
+        e.y += Math.sin(angleToPlayer) * e.speed;
+
+        // Quái cắn trúng người chơi
+        const distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
+        if (distToPlayer < player.radius + e.radius) {
+          sound.playHit();
+          screenShake = 12;
+          let dmg = 16 * dt * 3.5;
+          if (player.shield > 0) {
+            player.shield -= dmg;
+            if (player.shield < 0) {
+              player.hp += player.shield;
+              player.shield = 0;
+            }
+          } else {
+            player.hp -= dmg;
+          }
+
+          updateHUD();
+
+          if (player.hp <= 0) {
+            triggerGameOver();
+            return;
+          }
+        }
+
+        // Đạn bắn trúng quái
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          const b = bullets[j];
+          const distBullet = Math.hypot(e.x - b.x, e.y - b.y);
+          if (distBullet < e.radius + 4) {
+            e.hp -= b.damage;
+            createExplosion(b.x, b.y, b.color, 4);
+            bullets.splice(j, 1);
+
+            if (e.hp <= 0) {
+              sound.playHit();
+              createExplosion(e.x, e.y, e.color, 18);
+              score += e.type === 'TANK' ? 100 : e.type === 'RUNNER' ? 25 : 15;
+              spawnPickup(e.x, e.y);
+              enemies.splice(i, 1);
+              updateHUD();
+              break;
+            }
+          }
+        }
+      }
+
+      // 7. Nhặt vật phẩm (Pickups)
+      for (let i = pickups.length - 1; i >= 0; i--) {
+        const p = pickups[i];
+        p.pulse += dt * 5;
+        const d = Math.hypot(player.x - p.x, player.y - p.y);
+        if (d < player.radius + p.radius) {
+          sound.playPickup();
+          if (p.type === 'HP') {
+            player.hp = Math.min(player.maxHp, player.hp + 30);
+          } else if (p.type === 'SHIELD') {
+            player.shield = Math.min(player.maxShield, player.shield + 40);
+          } else if (p.type === 'AMMO') {
+            weapons[1].reserve += 16;
+            weapons[2].reserve += 60;
+          }
+          createExplosion(p.x, p.y, '#00f0ff', 10);
+          pickups.splice(i, 1);
+          updateHUD();
+        }
+      }
+
+      // 8. Cập nhật Hạt (Particles)
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.alpha -= pt.decay;
+        if (pt.alpha <= 0) particles.splice(i, 1);
+      }
+
+      // Giảm độ rung màn hình
+      if (screenShake > 0) screenShake *= 0.88;
+    }
+
+    /* =========================================================================
+       9. KẼ HÌNH TRÊN CANVAS
+       ========================================================================= */
+    function render() {
+      ctx.save();
+      // Hiệu ứng rung màn hình (Screen Shake)
+      if (screenShake > 0.5) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+      }
+
+      // Làm mờ nền để tạo vệt chuyển động công nghệ
+      ctx.fillStyle = '#08090e';
+      ctx.fillRect(0, 0, width, height);
+
+      // Vẽ lưới sàn Cyberpunk
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+      ctx.lineWidth = 1;
+      const gridSize = 45;
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Vẽ Pickups
+      pickups.forEach((p) => {
+        ctx.save();
+        ctx.beginPath();
+        const pulseRad = p.radius + Math.sin(p.pulse) * 2;
+        ctx.arc(p.x, p.y, pulseRad, 0, Math.PI * 2);
+        if (p.type === 'HP') ctx.fillStyle = '#00ff88';
+        else if (p.type === 'SHIELD') ctx.fillStyle = '#00f0ff';
+        else ctx.fillStyle = '#ffe600';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Vẽ Đạn
+      bullets.forEach((b) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = b.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = b.color;
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Vẽ Quái vật
+      enemies.forEach((e) => {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+        ctx.fillStyle = e.color;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = e.color;
+        ctx.fill();
+
+        // Thanh máu nhỏ trên đầu quái
+        if (e.hp < e.maxHp) {
+          const bw = e.radius * 2;
+          const bh = 4;
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillRect(-bw / 2, -e.radius - 8, bw, bh);
+          ctx.fillStyle = '#00ff66';
+          ctx.fillRect(-bw / 2, -e.radius - 8, bw * (e.hp / e.maxHp), bh);
+        }
+        ctx.restore();
+      });
+
+      // Vẽ Người chơi
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate(player.angle);
+
+      // Thân súng người chơi
+      ctx.fillStyle = '#445566';
+      ctx.fillRect(8, -4, 18, 8);
+
+      // Thân người chơi
+      ctx.beginPath();
+      ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#00f0ff';
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#00f0ff';
+      ctx.fill();
+
+      // Mũ giáp/mắt
+      ctx.beginPath();
+      ctx.arc(6, 0, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      // Khiên hộ thể phát sáng (nếu còn khiên)
+      if (player.shield > 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, player.radius + 6, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0, 240, 255, ${player.shield / 120})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Vẽ Hạt
+      particles.forEach((pt) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    /* =========================================================================
+       10. QUẢN LÝ VÒNG ĐỜI GAME
+       ========================================================================= */
+    function startGame() {
+      sound.init();
+      gameState = 'PLAYING';
+      score = 0;
+      wave = 1;
+      enemiesRemainingToSpawn = 10;
+      bullets = [];
+      enemies = [];
+      particles = [];
+      pickups = [];
+
+      player.x = width / 2;
+      player.y = height / 2;
+      player.hp = 100;
+      player.shield = 50;
+
+      weapons[1].ammo = 8;
+      weapons[1].reserve = 32;
+      weapons[2].ammo = 30;
+      weapons[2].reserve = 120;
+
+      switchWeapon(0);
+      updateHUD();
+
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-over-screen').style.display = 'none';
+    }
+
+    function triggerGameOver() {
+      gameState = 'GAMEOVER';
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('cyber_shooter_hi', highScore);
+        document.getElementById('high-score').innerText = highScore;
+      }
+      document.getElementById('final-score').innerText = score;
+      document.getElementById('final-wave').innerText = `ĐỢT ${wave}`;
+      document.getElementById('game-over-screen').style.display = 'flex';
+    }
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', startGame);
+
+    // Bắt đầu vòng lặp
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
